@@ -587,7 +587,8 @@ class TranslatorSpec extends FunSuite {
       PerlCompiler -> new PerlTranslator(tp, new ImportList()),
       PHPCompiler -> new PHPTranslator(tp, RuntimeConfig()),
       PythonCompiler -> new PythonTranslator(tp, new ImportList()),
-      RubyCompiler -> new RubyTranslator(tp)
+      RubyCompiler -> new RubyTranslator(tp),
+      HaskellCompiler -> new HaskellTranslator(tp),
     )
 
     langs.foreach { case (langObj, tr) =>

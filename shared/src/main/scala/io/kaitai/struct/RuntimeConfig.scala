@@ -8,5 +8,6 @@ case class RuntimeConfig(
   javaFromFileClass: String = "io.kaitai.struct.ByteBufferKaitaiStream",
   dotNetNamespace: String = "Kaitai",
   phpNamespace: String = "",
-  pythonPackage: String = ""
+  pythonPackage: String = "",
+  haskellModule: String = ""
 )
