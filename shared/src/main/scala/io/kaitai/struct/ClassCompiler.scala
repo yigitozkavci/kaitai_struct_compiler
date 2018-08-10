@@ -138,7 +138,7 @@ class ClassCompiler(
   }
 
   def compileAttrDeclarations(attrs: List[MemberSpec]): Unit = {
-    attrs.foreach { (attr) =>
+    attrs.foreach { attr =>
       val isNullable = if (lang.switchBytesOnlyAsRaw) {
         attr.isNullableSwitchRaw
       } else {

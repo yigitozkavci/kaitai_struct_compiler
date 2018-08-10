@@ -84,7 +84,9 @@ abstract class LanguageCompiler(
   def readHeader(endian: Option[FixedEndian], isEmpty: Boolean): Unit
   def readFooter(): Unit
 
+  def beforeAttributeDeclaration(attrName: Identifier, attrType: DataType, isNullable: Boolean, index: Int): Unit = {}
   def attributeDeclaration(attrName: Identifier, attrType: DataType, isNullable: Boolean): Unit
+  def attributeDeclarationWithIndex(attrName: Identifier, attrType: DataType, index: Int): Unit = {}
   def attributeReader(attrName: Identifier, attrType: DataType, isNullable: Boolean): Unit
   def attributeDoc(id: Identifier, doc: DocSpec): Unit = {}
 

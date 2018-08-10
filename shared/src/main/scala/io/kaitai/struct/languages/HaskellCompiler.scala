@@ -2,37 +2,29 @@ package io.kaitai.struct.languages
 
 import io.kaitai.struct._
 import io.kaitai.struct.datatype.DataType._
-import io.kaitai.struct.datatype.{CalcEndian, DataType, FixedEndian, InheritedEndian}
+import io.kaitai.struct.datatype._
 import io.kaitai.struct.exprlang.Ast
 import io.kaitai.struct.exprlang.Ast.expr
 import io.kaitai.struct.format._
 import io.kaitai.struct.languages.components._
 import io.kaitai.struct.translators.{HaskellTranslator, TypeDetector}
 
+import scala.collection.mutable.ListBuffer
+
 class HaskellCompiler(typeProvider: ClassTypeProvider, config: RuntimeConfig)
   extends LanguageCompiler(typeProvider, config)
     with SingleOutputFile
-    with UpperCamelCaseClasses
-    with ObjectOrientedLanguage
-    with EveryReadIsExpression
-    with UniversalFooter
-    with UniversalDoc
-    with AllocateIOLocalVar
-    with FixedContentsUsingArrayByteLiteral
-    with NoNeedForFullClassPath {
+    with UpperCamelCaseClasses {
   import HaskellCompiler._
 
   val translator = new HaskellTranslator(typeProvider, importList)
-
-  override def universalFooter : Unit =
-    out.dec  
 
   override def switchStart(id: Identifier, on: Ast.expr): Unit = {}
 
   override def indent: String = "  "
 
   override def outFileName(topClassName: String): String =
-    s"src/${type2class(topClassName)}"
+    s"src/${type2class(topClassName)}.hs"
 
   override def outImports(topClass: ClassSpec) =
     "\n" + importList.toList.map((x) => s"import $x").mkString("\n") + "\n"
@@ -49,117 +41,106 @@ class HaskellCompiler(typeProvider: ClassTypeProvider, config: RuntimeConfig)
     out.puts
   }
 
-  override def classHeader(name: String): Unit = {}
+  override def classHeader(name: List[String]): Unit = {
+    val typeName = type2class(name(0))
+    out.puts(s"data $typeName = $typeName")
+    out.inc
+  }
 
-  override def classConstructorHeader(name: String, parentType: DataType, rootClassName: String, isHybrid: Boolean, params: List[ParamDefSpec]): Unit = {}
+  override def classFooter(name: List[String]): Unit = {
+    out.puts("}")
+    out.dec
+  }
 
-  override def runRead(): Unit =
-    out.puts("_read();")
+  override def classConstructorHeader(name: List[String], parentType: DataType, rootClassName: List[String], isHybrid: Boolean, params: List[ParamDefSpec]): Unit = ???
 
-  override def runReadCalc(): Unit = {}
+  override def classConstructorFooter: Unit = ???
 
-  override def readHeader(endian: Option[FixedEndian], isEmpty: Boolean): Unit = {}
+  override def runRead(): Unit = {}
 
-  override def readFooter(): Unit = universalFooter
+  override def runReadCalc(): Unit = ???
+
+  override def readHeader(endian: Option[FixedEndian], isEmpty: Boolean): Unit = ???
+
+  override def readFooter(): Unit = ???
 
   override def attributeDeclaration(attrName: Identifier, attrType: DataType, isNullable: Boolean): Unit = {}
 
-  override def attributeReader(attrName: Identifier, attrType: DataType, isNullable: Boolean): Unit = {}
-
-  override def universalDoc(doc: DocSpec): Unit = {}
-
-  override def attrParseHybrid(leProc: () => Unit, beProc: () => Unit): Unit = {}
-
-  override def attrFixedContentsParse(attrName: Identifier, contents: String): Unit = {}
-
-  override def attrProcess(proc: ProcessExpr, varSrc: Identifier, varDest: Identifier): Unit = {}
-
-  override def allocateIO(varName: Identifier, rep: RepeatSpec): String = "allocIO"
-
-  override def useIO(ioEx: expr): String =
-    "io"
-
-  override def pushPos(io: String): Unit = {}
-
-  override def seek(io: String, pos: Ast.expr): Unit = {}
-
-  override def popPos(io: String): Unit = {}
-
-  override def alignToByte(io: String): Unit = {}
-
-  override def attrDebugStart(attrId: Identifier, attrType: DataType, ios: Option[String], rep: RepeatSpec): Unit = {}
-
-  override def attrDebugEnd(attrId: Identifier, attrType: DataType, io: String, rep: RepeatSpec): Unit = {}
-
-  override def condIfHeader(expr: expr): Unit = {}
-
-  override def condRepeatEosHeader(id: Identifier, io: String, dataType: DataType, needRaw: Boolean): Unit = {}
-
-  override def handleAssignmentRepeatEos(id: Identifier, expr: String): Unit = {}
-
-  override def condRepeatEosFooter: Unit = {}
-
-  override def condRepeatExprHeader(id: Identifier, io: String, dataType: DataType, needRaw: Boolean, repeatExpr: expr): Unit = {}
-
-  override def handleAssignmentRepeatExpr(id: Identifier, expr: String): Unit = {}
-
-  override def condRepeatUntilHeader(id: Identifier, io: String, dataType: DataType, needRaw: Boolean, untilExpr: expr): Unit = {}
-
-  override def handleAssignmentRepeatUntil(id: Identifier, expr: String, isRaw: Boolean): Unit = {}
-
-  override def condRepeatUntilFooter(id: Identifier, io: String, dataType: DataType, needRaw: Boolean, untilExpr: expr): Unit = {}
-
-  override def handleAssignmentSimple(id: Identifier, expr: String): Unit = {}
-
-  override def handleAssignmentTempVar(dataType: DataType, id: String, expr: String): Unit = {}
-
-  override def parseExpr(dataType: DataType, assignType: DataType, io: String, defEndian: Option[FixedEndian]): String = "expr"
-
-  override def bytesPadTermExpr(expr0: String, padRight: Option[Int], terminator: Option[Int], include: Boolean) = {
-    val expr1 = padRight match {
-      case Some(padByte) => s"$kstreamName.bytesStripRight($expr0, (byte) $padByte)"
-      case None => expr0
-    }
-    val expr2 = terminator match {
-      case Some(term) => s"$kstreamName.bytesTerminate($expr1, (byte) $term, $include)"
-      case None => expr1
-    }
-    expr2
+  override def attributeDeclarationWithIndex(attrName: Identifier, attrType: DataType, index: Int): Unit = {
+    val prefix = if (index == 0) "{ " else ", "
+    out.puts(s"${prefix}${idToStr(attrName)} :: ${kaitaiType2NativeType(attrType)}")
   }
 
-  override def userTypeDebugRead(id: String): Unit = {}
+  override def attributeReader(attrName: Identifier, attrType: DataType, isNullable: Boolean): Unit = ???
 
-  override def switchCaseFirstStart(condition: Ast.expr): Unit = {}
+  override def attrParse(attr: AttrLikeSpec, id: Identifier, extraAttrs: ListBuffer[AttrSpec], defEndian: Option[Endianness]): Unit = ???
 
-  override def switchCaseStart(condition: Ast.expr): Unit = {}
+  override def attrParseHybrid(leProc: () => Unit, beProc: () => Unit): Unit = ???
 
-  override def switchCaseEnd(): Unit = {}
+  override def attrFixedContentsParse(attrName: Identifier, contents: Array[Byte]): Unit = ???
 
-  override def switchElseStart(): Unit = {}
+  override def condIfHeader(expr: expr): Unit = ???
 
-  override def switchEnd(): Unit = {}
+  override def condIfFooter(expr: expr): Unit = ???
 
-  override def instanceDeclaration(attrName: InstanceIdentifier, attrType: DataType, isNullable: Boolean): Unit = {}
+  override def condRepeatEosHeader(id: Identifier, io: String, dataType: DataType, needRaw: Boolean): Unit = ???
 
-  override def instanceHeader(className: String, instName: InstanceIdentifier, dataType: DataType, isNullable: Boolean): Unit = {}
+  override def condRepeatEosFooter: Unit = ???
 
-  override def instanceCheckCacheAndReturn(instName: InstanceIdentifier): Unit = {}
+  override def condRepeatExprHeader(id: Identifier, io: String, dataType: DataType, needRaw: Boolean, repeatExpr: expr): Unit = ???
 
-  override def instanceReturn(instName: InstanceIdentifier): Unit = {}
+  override def condRepeatExprFooter: Unit = ???
 
-  override def instanceCalculate(instName: Identifier, dataType: DataType, value: expr): Unit = {}
+  override def condRepeatUntilHeader(id: Identifier, io: String, dataType: DataType, needRaw: Boolean, repeatExpr: expr): Unit = ???
 
-  override def enumDeclaration(curClass: String, enumName: String, enumColl: Seq[(Long, String)]): Unit = {}
+  override def condRepeatUntilFooter(id: Identifier, io: String, dataType: DataType, needRaw: Boolean, repeatExpr: expr): Unit = ???
 
-  override def debugClassSequence(seq: List[AttrSpec]) = {}
+  override def attrProcess(proc: ProcessExpr, varSrc: Identifier, varDest: Identifier): Unit = ???
 
-  override def privateMemberName(id: Identifier): String = s"this.${idToStr(id)}"
+  override def normalIO: String = ???
 
-  def idToStr(id: Identifier): String = "wowsoidentifier"
+  override def useIO(ioEx: expr): String = ???
 
-  override def publicMemberName(id: Identifier) = idToStr(id)
+  override def pushPos(io: String): Unit = ???
 
-  override def localTemporaryName(id: Identifier): String = s"_t_${idToStr(id)}"
+  override def seek(io: String, pos: expr): Unit = ???
+
+  override def popPos(io: String): Unit = ???
+
+  override def alignToByte(io: String): Unit = ???
+
+  override def instanceHeader(className: List[String], instName: InstanceIdentifier, dataType: DataType, isNullable: Boolean): Unit = ???
+
+  override def instanceFooter: Unit = ???
+
+  override def instanceCheckCacheAndReturn(instName: InstanceIdentifier): Unit = ???
+
+  override def instanceReturn(instName: InstanceIdentifier): Unit = ???
+
+  override def instanceCalculate(instName: Identifier, dataType: DataType, value: expr): Unit = ???
+
+  override def enumDeclaration(curClass: List[String], enumName: String, enumColl: Seq[(Long, EnumValueSpec)]): Unit = ???
+
+  override def switchCaseStart(condition: expr): Unit = ???
+
+  override def switchCaseEnd(): Unit = ???
+
+  override def switchElseStart(): Unit = ???
+
+  override def switchEnd(): Unit = ???
+
+  def idToStr(id: Identifier): String = {
+    id match {
+      case SpecialIdentifier(name) => name
+      case NamedIdentifier(name) => Utils.lowerCamelCase(name)
+      case NumberedIdentifier(idx) => s"_${NumberedIdentifier.TEMPLATE}$idx"
+      case InstanceIdentifier(name) => Utils.lowerCamelCase(name)
+      case RawIdentifier(innerId) => "_raw_" + idToStr(innerId)
+      case IoStorageIdentifier(innerId) => "_io_" + idToStr(innerId)
+    }
+  }
+
+  def kaitaiType2NativeType(attrType: DataType) : String = "Word8"
 }
 
 object HaskellCompiler extends LanguageCompilerStatic

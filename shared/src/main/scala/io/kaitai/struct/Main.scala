@@ -1,7 +1,7 @@
 package io.kaitai.struct
 
 import io.kaitai.struct.format.{ClassSpec, ClassSpecs, GenericStructClassSpec}
-import io.kaitai.struct.languages.GoCompiler
+import io.kaitai.struct.languages.{GoCompiler, HaskellCompiler}
 import io.kaitai.struct.languages.components.LanguageCompilerStatic
 import io.kaitai.struct.precompile._
 
@@ -61,6 +61,8 @@ object Main {
         new GoClassCompiler(specs, spec, config)
       case ConstructClassCompiler =>
         new ConstructClassCompiler(specs, spec)
+      case HaskellCompiler =>
+        new HaskellClassCompiler(specs, spec, config)
       case _ =>
         new ClassCompiler(specs, spec, config, lang)
     }
