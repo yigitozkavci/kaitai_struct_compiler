@@ -61,6 +61,11 @@ class GoCompiler(typeProvider: ClassTypeProvider, config: RuntimeConfig)
     out.puts(s"type ${types2class(name)} struct {")
     out.inc
   }
+  override def debugClassSequence(name: List[AttrSpec]): Unit = {
+    name.foreach { spec =>
+      out.puts(s"${idToStr(spec.id)}")
+    }
+  }
 
   override def classFooter(name: List[String]): Unit = universalFooter
 

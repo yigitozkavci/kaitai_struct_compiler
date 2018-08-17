@@ -75,6 +75,7 @@ abstract class LanguageCompiler(
 
   def classConstructorHeader(name: List[String], parentType: DataType, rootClassName: List[String], isHybrid: Boolean, params: List[ParamDefSpec]): Unit
   def classConstructorFooter: Unit
+  def detailedClassConstructorFooter(name: List[String]): Unit = {}
 
   def classDestructorHeader(name: List[String], parentType: DataType, topClassName: List[String]): Unit = {}
   def classDestructorFooter: Unit = {}

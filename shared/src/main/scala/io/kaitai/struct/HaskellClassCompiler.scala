@@ -1,5 +1,6 @@
 package io.kaitai.struct
 
+import io.kaitai.struct.datatype.{FixedEndian, InheritedEndian}
 import io.kaitai.struct.format.{AttrSpec, ClassSpec, ClassSpecs, MemberSpec}
 import io.kaitai.struct.languages.HaskellCompiler
 import io.kaitai.struct.languages.components.ExtraAttrs
@@ -20,6 +21,8 @@ class HaskellClassCompiler (
     lang.classHeader(curClass.name)
     compileAttrDeclarations(curClass.seq ++ extraAttrs)
     lang.classFooter(curClass.name)
+
+    compileReadFunction(curClass, extraAttrs)
   }
 
   def generateAttrs(curClass: ClassSpec): List[AttrSpec] = {
@@ -32,5 +35,22 @@ class HaskellClassCompiler (
     attrs.zipWithIndex.foreach { case (attr, index) =>
       lang.attributeDeclarationWithIndex(attr.id, attr.dataTypeComposite, index)
     }
+  }
+
+  def compileReadFunction(curClass: ClassSpec, extraAttrs: ListBuffer[AttrSpec]) = {
+    lang.classConstructorHeader(
+      curClass.name,
+      curClass.parentType,
+      topClassName,
+      curClass.meta.endian.contains(InheritedEndian),
+      curClass.params
+    )
+    // FIXME
+    val defEndian = curClass.meta.endian match {
+      case Some(fe: FixedEndian) => Some(fe)
+      case _ => None
+    }
+    compileSeq(curClass.seq, extraAttrs, defEndian)
+    lang.detailedClassConstructorFooter(curClass.name)
   }
 }

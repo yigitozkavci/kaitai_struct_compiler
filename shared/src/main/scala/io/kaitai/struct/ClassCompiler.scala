@@ -219,7 +219,7 @@ class ClassCompiler(
     */
   def compileSeq(seq: List[AttrSpec], extraAttrs: ListBuffer[AttrSpec], defEndian: Option[FixedEndian]) = {
     var wasUnaligned = false
-    seq.foreach { (attr) =>
+    seq.foreach { attr =>
       val nowUnaligned = isUnalignedBits(attr.dataType)
       if (wasUnaligned && !nowUnaligned)
         lang.alignToByte(lang.normalIO)

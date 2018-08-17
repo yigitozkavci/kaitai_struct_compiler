@@ -398,7 +398,7 @@ class GoTranslator(out: StringLanguageOutputWriter, provider: TypeProvider, impo
     ResultLocalVar(v)
   }
 
-  def userType(dataType: UserType, io: String) = {
+  def userType(dataType: UserType, io: String): ResultLocalVar = {
     val v = allocateLocalVar()
     out.puts(s"${localVarName(v)} := new(${GoCompiler.types2class(dataType.classSpec.get.name)})")
     out.puts(s"err = ${localVarName(v)}.Read($io, this, this._root)")

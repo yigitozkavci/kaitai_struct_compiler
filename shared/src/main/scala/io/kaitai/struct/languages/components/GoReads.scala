@@ -93,7 +93,6 @@ trait GoReads extends CommonReads with ObjectOrientedLanguage with SwitchOps {
         // no fixed buffer, just use regular IO
         io
     }
-
     val expr = translator.userType(dataType, newIO)
     handleAssignment(id, expr, rep, false)
   }

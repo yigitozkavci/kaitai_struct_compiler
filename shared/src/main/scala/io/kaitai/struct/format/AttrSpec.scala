@@ -91,7 +91,7 @@ case class YamlAttrArgs(
   parent: Option[Ast.expr],
   process: Option[ProcessExpr]
 ) {
-  def getByteArrayType(path: List[String]) = {
+  def getByteArrayType(path: List[String]): DataType.BytesType = {
     (size, sizeEos) match {
       case (Some(bs: expr), false) =>
         BytesLimitType(bs, terminator, include, padRight, process)

@@ -12,7 +12,7 @@ trait CommonReads extends LanguageCompiler {
     attrParseIfHeader(id, attr.cond.ifExpr)
 
     // Manage IO & seeking for ParseInstances
-    val io = attr match {
+    val io: String = attr match {
       case pis: ParseInstanceSpec =>
         val io = pis.io match {
           case None => normalIO
